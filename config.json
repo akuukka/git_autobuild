@@ -1,0 +1,6 @@
+{
+    "update_interval": 30.0,
+    "repo": "https://bitbucket.org/akuukka/helherron",
+    "working_dir": "temp",
+    "run_cmd": "python3 build.py"
+}

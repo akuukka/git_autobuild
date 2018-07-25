@@ -5,13 +5,7 @@ import os
 import json
 import subprocess
 
-config = {
-    "update_interval": 30.0,
-    "repo": "https://bitbucket.org/akuukka/helherron",
-    "working_dir": "temp",
-    "run_cmd": "python3 build.py"
-}
-
+config = None
 quit = False
 
 def signal_handler(signal, frame):
@@ -75,9 +69,21 @@ def process_repo(new_hash):
     data["last_hash"] = new_hash
     with open('.git_autobuild', 'w') as outfile:
         json.dump(data, outfile)
-    outfile.close()    
+    outfile.close()
+
+def read_config():
+    global config
+    try:
+        outfile = open('config.json', 'r')
+        config = json.load(outfile)
+        outfile.close()
+    except FileNotFoundError:
+        print("config.json not present.")
+        exit(2)
 
 if __name__ == "__main__":
+    read_config()
+    
     signal.signal(signal.SIGINT, signal_handler)
 
     print("Starting git-autobuild")
