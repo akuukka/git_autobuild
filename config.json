@@ -2,5 +2,5 @@
     "update_interval": 15.0,
     "repo": "http://github.com/akuukka/git_autobuild",
     "working_dir": "temp",
-    "run_cmd": "echo README.md"
+    "run_cmd": "cat README.md"
 }
