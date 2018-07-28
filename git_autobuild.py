@@ -1,17 +1,23 @@
+"""
+A simple git repo autobuilder
+"""
+
+import shutil
 import time
 import signal
 import sys
 import os
 import json
 import subprocess
+import optparse
 
-config = None
-quit = False
+CONFIG = {}
+QUIT = False
 
 def signal_handler(signal, frame):
-    global quit
+    global QUIT
     print("Requesting quit...")
-    quit = True
+    QUIT = True
 
 def init():
     print("Initializing...")
@@ -21,7 +27,7 @@ def init():
     outfile.close()
 
     # Clone the repo
-    cmd = "git clone " + config["repo"]
+    cmd = "git clone " + CONFIG["repo"]
     res = os.system(cmd)
 
 def get_last_processed_hash():
@@ -33,9 +39,9 @@ def get_last_processed_hash():
 def get_repo_dir():
     dirlist = os.listdir(".")
     for dir in dirlist:
-        if dir in config["repo"]:
+        if dir in CONFIG["repo"]:
             return dir
-    print("Could not find repo dir")
+    sys.stderr.write("Could not find repo dir")
     exit(2)
 
 def get_current_hash():
@@ -47,7 +53,6 @@ def get_current_hash():
     hash_file = open(".hash_temp", 'r')
     hash_str = hash_file.read().strip()
     hash_file.close()
-    
     return hash_str
 
 def do_pull():
@@ -59,7 +64,7 @@ def do_pull():
 def process_repo(new_hash):
     repo_dir = get_repo_dir()
     os.chdir(repo_dir)
-    os.system(config["run_cmd"])
+    os.system(CONFIG["run_cmd"])
     os.chdir("..")
 
     # Update processed hash
@@ -72,41 +77,47 @@ def process_repo(new_hash):
     outfile.close()
 
 def read_config():
-    global config
+    global CONFIG
     try:
         outfile = open('config.json', 'r')
-        config = json.load(outfile)
+        CONFIG = json.load(outfile)
         outfile.close()
     except FileNotFoundError:
-        print("config.json not present.")
+        sys.stderr.write("config.json not present.")
         exit(2)
 
-if __name__ == "__main__":
-    read_config()
+def main_loop():
+    parser = optparse.OptionParser()
+    parser.add_option("-c", "--clean", action="store_true", default=False, dest="clean",
+                      help="Clean everything before generating the projects")
+    parser.add_option("-r", "--rerun_cmd", action="store_true", default=False, dest="rerun_cmd",
+                      help="Re-runs the command specified in config.json even if git latest commit hash has not changed since the command was run last time.")
+    (options, _) = parser.parse_args()
+
+    # Perform clean if requested: meaning that we will clone the repo again
+    if options.clean:
+        if os.path.exists(CONFIG["working_dir"]):
+            shutil.rmtree(CONFIG["working_dir"])
     
-    signal.signal(signal.SIGINT, signal_handler)
+    if not os.path.exists(CONFIG["working_dir"]):
+        os.mkdir(CONFIG["working_dir"])
 
-    print("Starting git-autobuild")
-
-    wd = config["working_dir"]
-
-    # TODO: if clean is requested, should remove the working directory if it exists    
-    if not os.path.exists(wd):
-        os.mkdir(wd)
-
-    os.chdir(wd)
+    os.chdir(CONFIG["working_dir"])
     if not os.path.exists(".git_autobuild"):
         init()
 
-    update_interval = config["update_interval"]
-    while not quit:
+    update_interval = CONFIG["update_interval"]
+    while not QUIT:
         do_pull()
-        
         last_processed_hash = get_last_processed_hash()
         current_hash = get_current_hash()
-        if last_processed_hash != current_hash:
-            print("Top commit changed - trigger build")
+        if last_processed_hash != current_hash or options.rerun_cmd:
+            options.rerun_cmd = False
             process_repo(current_hash)
-            
         time.sleep(update_interval)
+
+if __name__ == "__main__":
+    read_config()
+    signal.signal(signal.SIGINT, signal_handler)
+    main_loop()
     

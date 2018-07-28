@@ -1,6 +1,6 @@
 {
-    "update_interval": 15.0,
-    "repo": "http://github.com/akuukka/git_autobuild",
+    "update_interval": 10.0,
+    "repo": "http://github.com/akuukka/git_autobuild.git/",
     "working_dir": "temp",
     "run_cmd": "cat README.md"
 }
