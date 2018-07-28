@@ -77,14 +77,14 @@ def process_repo(new_hash):
     outfile.close()
 
 def read_config():
-    global CONFIG
     try:
         outfile = open('config.json', 'r')
-        CONFIG = json.load(outfile)
+        config = json.load(outfile)
         outfile.close()
     except FileNotFoundError:
         sys.stderr.write("config.json not present.")
         exit(2)
+    return config
 
 def main_loop():
     parser = optparse.OptionParser()
@@ -117,7 +117,7 @@ def main_loop():
         time.sleep(update_interval)
 
 if __name__ == "__main__":
-    read_config()
+    CONFIG = read_config()
     signal.signal(signal.SIGINT, signal_handler)
     main_loop()
     
