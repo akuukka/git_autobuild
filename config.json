@@ -1,6 +1,6 @@
 {
-    "update_interval": 30.0,
-    "repo": "https://bitbucket.org/akuukka/helherron",
+    "update_interval": 15.0,
+    "repo": "http://github.com/akuukka/git_autobuild",
     "working_dir": "temp",
-    "run_cmd": "python3 build.py"
+    "run_cmd": "echo README.md"
 }
