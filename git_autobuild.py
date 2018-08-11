@@ -58,8 +58,15 @@ def get_current_hash():
 def do_pull():
     repo_dir = get_repo_dir()
     os.chdir(repo_dir)
-    subprocess.check_output('git pull', shell=True)
+    success = True
+    try:
+        subprocess.check_output('git pull', shell=True)
+    except subprocess.CalledProcessError:
+        sys.stderr.write("Failed to run git pull. Retrying later.\n")
+        sys.stderr.flush()
+        success = False
     os.chdir("..")
+    return success
 
 def process_repo(new_hash):
     repo_dir = get_repo_dir()
@@ -108,12 +115,13 @@ def main_loop():
 
     update_interval = CONFIG["update_interval"]
     while not QUIT:
-        do_pull()
-        last_processed_hash = get_last_processed_hash()
-        current_hash = get_current_hash()
-        if last_processed_hash != current_hash or options.rerun_cmd:
-            options.rerun_cmd = False
-            process_repo(current_hash)
+        success = do_pull()
+        if success:
+            last_processed_hash = get_last_processed_hash()
+            current_hash = get_current_hash()
+            if last_processed_hash != current_hash or options.rerun_cmd:
+                options.rerun_cmd = False
+                process_repo(current_hash)
         time.sleep(update_interval)
 
 if __name__ == "__main__":
